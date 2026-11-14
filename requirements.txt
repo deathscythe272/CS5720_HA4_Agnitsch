@@ -1,0 +1,5 @@
+numpy
+nltk
+jupyter
+nbconvert
+ipykernel
