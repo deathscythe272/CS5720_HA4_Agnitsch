@@ -27,7 +27,7 @@ py -3 -m venv .venv
 pip install -r requirements.txt
 python src\q1_nlp_preprocessing.py
 python src\q2_scaled_dot_product_attention.py
-cd src; python part3_self_attention_check.py; cd ..
+python src\part3_self_attention_check.py
 ```
 
 Or open the notebook and run all cells:

@@ -13,9 +13,15 @@ so the arithmetic can be verified and so the same inputs can be fed through the
 scaled attention function from Part II for comparison.
 """
 
+import sys
+from pathlib import Path
+
 import numpy as np
 
-from q2_scaled_dot_product_attention import scaled_dot_product_attention, softmax
+# Make the sibling Part II module importable whether this script is run from the
+# repo root (python src/part3_...py) or from inside src/.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from q2_scaled_dot_product_attention import scaled_dot_product_attention, softmax  # noqa: E402
 
 np.set_printoptions(precision=4, suppress=True)
 

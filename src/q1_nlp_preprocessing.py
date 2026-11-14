@@ -37,9 +37,11 @@ def ensure_nltk_data() -> None:
 
 
 def preprocess(sentence: str) -> tuple[list[str], list[str], list[str]]:
-    """Tokenize, remove stop words, and stem a sentence.
+    """Tokenize, remove stop words, and stem a sentence, printing each stage.
 
-    Returns the three intermediate lists so the caller can print or test each stage.
+    The assignment asks for one function that performs the three steps and prints
+    the three lists in order, so the printing happens here. The lists are also
+    returned so the function can be tested or reused without parsing stdout.
     The stop word check lowercases each token before looking it up, because the NLTK
     list is all lowercase and we do not want a capitalized "The" to slip through.
     Punctuation is left in on purpose: the assignment's expected output describes
@@ -61,21 +63,22 @@ def preprocess(sentence: str) -> tuple[list[str], list[str], list[str]]:
     stemmer = PorterStemmer()
     stemmed = [stemmer.stem(tok) for tok in tokens_no_stop]
 
+    # The three required outputs, in the order the assignment lists them.
+    print("1. Original Tokens:          ", tokens)
+    print("2. Tokens Without Stopwords: ", tokens_no_stop)
+    print("3. Stemmed Words:            ", stemmed)
+
     return tokens, tokens_no_stop, stemmed
 
 
 def main() -> None:
     ensure_nltk_data()
-    tokens, tokens_no_stop, stemmed = preprocess(SENTENCE)
-
     print("Sentence:", SENTENCE)
     print()
-    print("1. Original Tokens:          ", tokens)
-    print("2. Tokens Without Stopwords: ", tokens_no_stop)
-    print("3. Stemmed Words:            ", stemmed)
+    tokens, tokens_no_stop, _ = preprocess(SENTENCE)
 
-    # Show which words the stop word filter actually removed, so the effect of
-    # step 2 is visible rather than implied.
+    # Extra, after the three required lines: show which words the stop word
+    # filter actually removed, so the effect of step 2 is visible rather than implied.
     removed = [tok for tok in tokens if tok not in tokens_no_stop]
     print()
     print("Stop words removed:", removed)
