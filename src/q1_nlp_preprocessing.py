@@ -53,7 +53,8 @@ def preprocess(sentence: str) -> tuple[list[str], list[str], list[str]]:
     tokens = word_tokenize(sentence)
 
     # Step 2 - remove stop words. These are high-frequency function words
-    # ("are", "in", "and", "like") that carry little topical meaning on their own.
+    # ("are", "in", "and") that carry little topical meaning on their own. Note
+    # that "like" is not in NLTK's English list, so it survives this step.
     stop_words = set(stopwords.words("english"))
     tokens_no_stop = [tok for tok in tokens if tok.lower() not in stop_words]
 
@@ -79,7 +80,7 @@ def main() -> None:
 
     # Extra, after the three required lines: show which words the stop word
     # filter actually removed, so the effect of step 2 is visible rather than implied.
-    removed = [tok for tok in tokens if tok not in tokens_no_stop]
+    removed = [tok for tok in tokens if tok.lower() in set(stopwords.words("english"))]
     print()
     print("Stop words removed:", removed)
 

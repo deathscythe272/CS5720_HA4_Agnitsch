@@ -84,11 +84,13 @@ def main() -> None:
     results = [lecture_self_attention(X, W_Q, W_K, W_V, i) for i in range(3)]
     print("All three outputs:")
     print(np.array(results))
-    print("Slide 41 shows: [2.0 7.0 1.5], [2.0 8.0 0.0], [2.0 7.8 0.3]")
+    print("Lecture slides (33-41) show: [2.0 7.0 1.5], [2.0 8.0 0.0], [2.0 7.8 0.3]")
     # Token 3 (the one the assignment asks for) matches the slide exactly. Token 1
-    # differs slightly because the slide treats softmax([2, 4, 4]) as [0.0, 0.5, 0.5];
-    # the true first weight is 0.063, which rounds to 0.1, not 0.0. The slide notes
-    # this approximation itself ("can arise from rounding").
+    # differs slightly because the slide treats softmax([2, 4, 4]) as [0.0, 0.5, 0.5]
+    # and notes that the 0.0 comes from rounding. Strictly, the first weight is 0.063,
+    # which rounds to 0.1, and then the 1-dp weights [0.1, 0.5, 0.5] sum to 1.1 rather
+    # than 1.0, which is presumably why the slide zeroes it. Either way the Part III
+    # question only asks for token 3, where the weights round cleanly to [0.0, 0.9, 0.1].
     print()
 
     # For comparison, run the same Q, K, V through the Part II implementation,

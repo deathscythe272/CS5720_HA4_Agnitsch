@@ -37,7 +37,9 @@ jupyter notebook CS5720_HA4_Agnitsch.ipynb
 ```
 
 The first run of Q1 downloads two small NLTK resources (`punkt_tab`, `stopwords`) into
-your user NLTK data folder.
+your user NLTK data folder. If PowerShell refuses to run `Activate.ps1`, either run
+`Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first or use
+`.\.venv\Scripts\activate.bat` from a Command Prompt.
 
 ---
 
@@ -115,6 +117,10 @@ First dimension = 0.4223 + 0.4223 = 0.8446. Second dimension = 0.1554 + 0.4223 =
 **c = [0.845, 0.578]**. h₁ and h₃ tie for the largest weight because both have a dot
 product of 1 with the decoder state; h₂ is orthogonal to it and gets the least.
 
+Rounding convention: weights are carried at four decimals and rounded only in the final
+answers, the same way the lecture's worked example does it. If the three-decimal weights
+are used directly, the context vector comes out as [0.844, 0.577].
+
 ### Question 3. Self-attention in Transformers
 
 **(a) What self-attention is and how it differs.** Self-attention produces a new
@@ -143,7 +149,7 @@ self-attention computes a direct query–key score between any two positions, so
 ten tokens away is as reachable as the neighbor. Example from the lecture: in "Rashonda
 accepted a job in deep learning because **she** loves the topic," the query for "she"
 gets a high score against the key for "Rashonda," so the new representation of "she"
-encodes who it refers to even though eight words separate them. Likewise "bank" in "I
+encodes who it refers to even though seven words separate them. Likewise "bank" in "I
 arrived at the bank across the river" attends to "river" and is disambiguated.
 
 ### Question 4. Multi-head attention
@@ -233,8 +239,8 @@ be a fourth, separate step.
 
 **Stemming vs lemmatization.** Stemming chops suffixes off with fixed rules and no
 dictionary, so it is fast but can produce non-words. Lemmatization looks the word up in a
-vocabulary, uses its part of speech, and returns the dictionary base form, so it is
-slower but always yields a real word and is more accurate. For "running": the Porter
+vocabulary, uses its part of speech, and returns the dictionary base form when it can
+find one, so it is slower but yields real words and is more accurate. For "running": the Porter
 stemmer gives `run`, and the WordNet lemmatizer with a verb tag also gives `run`. The
 difference shows on other words: stemming turns "flies" into `fli` and "happily" into
 `happili`, while lemmatizing gives `fly` and `happily`. And lemmatization is
@@ -285,8 +291,8 @@ value row and 1/(e+1) ≈ 0.269 on the other. Row 1 of the output is 0.731·[1,2
 0.269·[5,6,7,8]; row 2 is the mirror image.
 
 **Why divide by √d.** The dot product of two d-dimensional vectors is a sum of d terms,
-so its magnitude grows with d: if the components have unit variance, the score has
-variance d. Large scores push softmax into its saturated region, where one weight is
+so its magnitude grows with d: if the components are independent with zero mean and unit
+variance, the score has variance d. Large scores push softmax into its saturated region, where one weight is
 nearly 1 and the rest nearly 0, and the gradient of softmax there is close to zero, so
 training stalls. Dividing by √d brings the scores back to unit variance regardless of
 the key dimension, keeping softmax in the range where it produces soft, trainable
@@ -307,8 +313,37 @@ modifies which noun, and multiple heads can capture several such relationships a
 
 ## Part III — Self-attention calculation, third token
 
-Inputs from the Chapter 9 lecture example (three tokens, embedding size 4, projected to
-size 3). Multiplying each input by W_Q, W_K, W_V gives:
+Inputs from the Chapter 9 lecture example: three tokens with 4-dimensional embeddings,
+projected to 3-dimensional queries, keys, and values.
+
+```
+x₁ = [1, 0, 1, 0]      x₂ = [0, 2, 0, 2]      x₃ = [1, 1, 1, 1]
+
+        W_Q                  W_K                  W_V
+    [1, 0, 1]            [0, 0, 1]            [0, 2, 0]
+    [1, 0, 0]            [1, 1, 0]            [0, 3, 0]
+    [0, 0, 1]            [0, 1, 0]            [1, 0, 3]
+    [0, 1, 1]            [1, 1, 0]            [1, 1, 0]
+```
+
+Rows of each W index the four input dimensions, columns the three output dimensions.
+Each token's query, key, and value are its input row times the matrix, which is a
+weighted sum of the matrix rows using the token's components as weights.
+
+**Step 0 — derive q, k, v.** For token 3 every component of x₃ is 1, so each product is
+simply the column sums:
+
+- q₃ = x₃ W_Q = [1+1+0+0, 0+0+0+1, 1+0+1+1] = **[2, 1, 3]**
+- k₃ = x₃ W_K = [0+1+0+1, 0+1+1+1, 1+0+0+0] = **[2, 3, 1]**
+- v₃ = x₃ W_V = [0+0+1+1, 2+3+0+1, 0+0+3+0] = **[2, 6, 3]**
+
+The keys and values of the other two tokens are needed too. x₁ = [1, 0, 1, 0] picks rows
+1 and 3; x₂ = [0, 2, 0, 2] picks twice rows 2 and 4:
+
+- k₁ = [0, 0, 1] + [0, 1, 0] = **[0, 1, 1]**, v₁ = [0, 2, 0] + [1, 0, 3] = **[1, 2, 3]**
+- k₂ = 2·[1, 1, 0] + 2·[1, 1, 0] = **[4, 4, 0]**, v₂ = 2·[0, 3, 0] + 2·[1, 1, 0] = **[2, 8, 0]**
+
+Collected, with the other two queries for completeness:
 
 | token | input x | query q | key k | value v |
 |---|---|---|---|---|
@@ -359,9 +394,10 @@ First dimension: 0.0 + 1.8 + 0.2 = 2.0. Second: 0.0 + 7.2 + 0.6 = 7.8. Third:
 K, V through the Part II scaled function. With scaling by √3 and no rounding the
 weights for token 3 become [0.007, 0.755, 0.238] and the output [1.99, 7.48, 0.74]: the
 same ranking, but softer, which is the point of the scaling. The script also notes one
-quirk: for token 1 the slide treats softmax([2, 4, 4]) as [0.0, 0.5, 0.5], but the
-true first weight is 0.063, which rounds to 0.1; the slide flags this approximation
-itself. Token 3, the one asked for here, has no such issue.
+quirk: for token 1 the slide treats softmax([2, 4, 4]) as [0.0, 0.5, 0.5] and remarks
+that the 0.0 comes from rounding. Strictly the first weight is 0.063, which rounds to
+0.1, but then the one-decimal weights would sum to 1.1, which is presumably why the slide
+zeroes it. Token 3, the one asked for here, rounds cleanly and has no such issue.
 
 ---
 
